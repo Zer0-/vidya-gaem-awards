@@ -28,14 +28,14 @@
 class Route{
     function __construct(
         $handler=Null,
-        string $name=Null,
+        $name=Null,
         array $permissions=Null,
-        boolean $handles_subtree=Null
+        $handles_subtree=false
     ){
         $this->handler = $handler;
         $this->name = $name;
         $this->permissions = $permissions ? $permissions : [];
-        $this->handles_subtree = $handles_subtree ? $handles_subtree : false;
+        $this->handles_subtree = $handles_subtree;
         $this->routemap = [];
     }
 
@@ -61,5 +61,21 @@ class Route{
             array_push($parts, $twotuple[0]);
         }
         return $parts;
+    }
+
+    function __toString(){
+        $info = [];
+        if ($this->name)
+            array_push($info, 'name: ' . $this->name);
+        if ($this->handler)
+            array_push($info, 'handler: ' . get_class($this->handler));
+        if ($this->routemap){
+            $s = 'contains ' . count($this->routemap) . ' routes';
+            array_push($info, $s);
+        }
+        if ($info)
+            return '<Route ' . implode(', ', $info) . '>';
+        else
+            return '<Route>';
     }
 }

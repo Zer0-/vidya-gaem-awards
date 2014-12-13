@@ -23,14 +23,17 @@ class TestRoute extends PHPUnit_Framework_TestCase{
         $this->assertEquals(count($route->routemap), 2);
     }
 
-    function testRoutePathparts(){
-        $route = (new Route)->add([
+    function testRouteToString(){
+        $route = new Route;
+        $this->assertEquals((string) $route, '<Route>');
+        $foo = new stdClass;
+        $route = (new Route($foo, 'myroute'))->add([
             ['one', new Route],
             ['two', (new Route)->add([
                 ['sublevel', new Route]
             ])]
         ]);
-        $parts = ['one', 'two'];
-        $this->assertEquals($route->get_pathparts(), $parts);
+        $s = '<Route name: myroute, handler: stdClass, contains 2 routes>';
+        $this->assertEquals((string) $route, $s);
     }
 }
