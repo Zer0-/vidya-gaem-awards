@@ -1,2 +1,6 @@
 includes/config.php
 webhook-deployer/
+composer.lock
+vendor
+*.swp
+*~

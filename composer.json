@@ -1,0 +1,6 @@
+{
+    "name": "vidya_gaem_awards_website",
+    "require": {
+        "phpunit/phpunit": "4.3.*"
+    }
+}
