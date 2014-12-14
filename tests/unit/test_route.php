@@ -56,11 +56,24 @@ class TestRoute extends PHPUnit_Framework_TestCase{
             ])],
             ['unused', $r5]
         ]);
-        echo "\nSTART\n";
+        $list = [];
         foreach ($routemap as $value){
-            list($path, $route) = $value;
-            echo var_dump($path), $route, "\n";
-            echo "\n";
+            array_push($list, $value);
+            //rint($value[0], $value[1]->name);
+        }
+        $testlist = [
+            [['first'], $r1],
+            [['first', 'this-one'], $r2],
+            [['first', 'this-one', 'second'], $r3],
+            [['first', 'this-one', 'second', 'deepest'], $r4],
+            [['first', 'ending'], $r1],
+            [['unused'], $r5]
+        ];
+        foreach ($testlist as $key => $validvalue){
+            list($validpath, $validroute) = $validvalue;
+            list($path, $route) = $list[$key];
+            $this->assertEquals($path, $validpath);
+            $this->assertEquals($route->name, $validroute->name);
         }
     }
 }

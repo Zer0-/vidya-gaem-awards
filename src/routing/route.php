@@ -1,5 +1,45 @@
 <?php
 
+//this is used by rint
+function pretty_print_var($v){
+    $raw_vals = ['string', 'boolean', 'double', 'integer'];
+    $t = gettype($v);
+    if ($t == 'integer' and $v == 0)
+        echo "0";
+    else if ($t == 'NULL')
+        echo "NULL";
+    else if ($t == 'boolean'){
+        if ($v)
+            echo "true";
+        else
+            echo "false";
+    }
+    else if (method_exists($v, '__toString'))
+        echo $v;
+    else if (!in_array(gettype($v), $raw_vals))
+        echo var_dump($v);
+    else
+        echo $v;
+}
+
+//a print function named 'rint' that tries to behave a bit more like Python's print
+function rint($var=600000, $var2=600000, $var3=600000){
+    if (gettype($var) == 'integer' and $var == 600000){
+        echo "\n";
+        return;
+    }
+    pretty_print_var($var);
+    if (gettype($var2) != 'integer' or $var2 != 600000){
+        echo ' ';
+        pretty_print_var($var2);
+    }
+    if (gettype($var3) != 'integer' or $var3 != 600000){
+        echo ' ';
+        pretty_print_var($var3);
+    }
+    echo "\n";
+}
+
 /*
  * The Route class is responsible for getting the appropriate function
  * to handle the Request object when Route.getView is called.
@@ -28,21 +68,24 @@
 class Route implements Iterator{
     //attributes for iteration
     private $iter_count;
-    private $iter_current_iterator;
-    private $iter_stack;
+    private $iter_local_count;
+    private $iter_local_count_stack;
+    private $iter_current_routemap;
+    private $iter_routemap_stack;
     private $iter_path;
 
     function __construct(
         $handler=Null,
         $name=Null,
         array $permissions=Null,
-        $handles_subtree=false
+        $handles_subtree=false,
+        array $routemap=Null        //Usually not manually set
     ){
         $this->handler = $handler;
         $this->name = $name;
         $this->permissions = $permissions ? $permissions : [];
         $this->handles_subtree = $handles_subtree;
-        $this->routemap = [];
+        $this->routemap = $routemap ? $routemap : [];
     }
 
     /*
@@ -57,8 +100,13 @@ class Route implements Iterator{
      *
      */
     function add($routemap){
-        $this->routemap = $routemap;
-        return $this;
+        return new Route(
+            $this->handler,
+            $this->name,
+            $this->permissions,
+            $this->handles_subtree,
+            $routemap
+        );
     }
 
     function __toString(){
@@ -82,21 +130,20 @@ class Route implements Iterator{
      */
     function rewind(){
         $this->iter_count = 0;
-        $this->iter_current_iterator = new ArrayIterator($this->routemap);
-        $this->iter_stack = [];
+        $this->iter_local_count = 0;
+        $this->iter_local_count_stack = [];
+        $this->iter_current_routemap = $this->routemap;
+        $this->iter_routemap_stack = [];
         $this->iter_path = [];
-        echo "REWIND\n";
-        echo "count: ", $this->iter_count, "\n";
-        echo "iter_path: ", var_dump($this->iter_path), "\n";
     }
 
     function valid(){
-        return $this->iter_current_iterator->valid();
+        return array_key_exists($this->iter_local_count, $this->iter_current_routemap);
     }
 
     function current(){
-        list($pathpart, $route) = $this->iter_current_iterator->current();
-        return [$this->iter_path + $pathpart, $route];
+        list($pathpart, $route) = $this->iter_current_routemap[$this->iter_local_count];
+        return [array_merge($this->iter_path, [$pathpart]), $route];
     }
 
     function key(){
@@ -105,18 +152,22 @@ class Route implements Iterator{
 
     function next(){
         $this->iter_count ++;
-        if ($this->iter_current_iterator->valid()){
-            array_push($this->iter_stack, $this->iter_current_iterator);
-            list($pathpart, $route) = $this->iter_current_iterator->current();
+        list($pathpart, $route) = $this->iter_current_routemap[$this->iter_local_count];
+        $routemap = $route->routemap;
+        if ($routemap){
             array_push($this->iter_path, $pathpart);
-            $next_iter = $route;
-            $next_iter->rewind();
-            $this->iter_current_iterator = $next_iter;
+            array_push($this->iter_routemap_stack, $this->iter_current_routemap);
+            array_push($this->iter_local_count_stack, $this->iter_local_count);
+            $this->iter_current_routemap = $routemap;
+            $this->iter_local_count = 0;
             return;
         }
-        $this->iter_current_iterator->next();
-        if (!$this->iter_current_iterator->valid()){
-            $this->iter_current_iterator = array_pop($this->iter_stack);
+        $this->iter_local_count ++;
+        while (!$this->valid() and ($this->iter_routemap_stack)){
+            $this->iter_current_routemap = array_pop($this->iter_routemap_stack);
+            $this->iter_local_count = array_pop($this->iter_local_count_stack);
+            array_pop($this->iter_path);
+            $this->iter_local_count ++;
         }
     }
 }
