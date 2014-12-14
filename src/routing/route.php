@@ -25,7 +25,13 @@
  * A router can then take a Request and the routemap and get the right Route.
  *
  */
-class Route{
+class Route implements Iterator{
+    //attributes for iteration
+    private $iter_count;
+    private $iter_current_iterator;
+    private $iter_stack;
+    private $iter_path;
+
     function __construct(
         $handler=Null,
         $name=Null,
@@ -55,14 +61,6 @@ class Route{
         return $this;
     }
 
-    function get_pathparts(){
-        $parts = [];
-        foreach ($this->routemap as $twotuple){
-            array_push($parts, $twotuple[0]);
-        }
-        return $parts;
-    }
-
     function __toString(){
         $info = [];
         if ($this->name)
@@ -77,5 +75,48 @@ class Route{
             return '<Route ' . implode(', ', $info) . '>';
         else
             return '<Route>';
+    }
+
+    /*
+     * Iterator methods
+     */
+    function rewind(){
+        $this->iter_count = 0;
+        $this->iter_current_iterator = new ArrayIterator($this->routemap);
+        $this->iter_stack = [];
+        $this->iter_path = [];
+        echo "REWIND\n";
+        echo "count: ", $this->iter_count, "\n";
+        echo "iter_path: ", var_dump($this->iter_path), "\n";
+    }
+
+    function valid(){
+        return $this->iter_current_iterator->valid();
+    }
+
+    function current(){
+        list($pathpart, $route) = $this->iter_current_iterator->current();
+        return [$this->iter_path + $pathpart, $route];
+    }
+
+    function key(){
+        return $this->iter_count;
+    }
+
+    function next(){
+        $this->iter_count ++;
+        if ($this->iter_current_iterator->valid()){
+            array_push($this->iter_stack, $this->iter_current_iterator);
+            list($pathpart, $route) = $this->iter_current_iterator->current();
+            array_push($this->iter_path, $pathpart);
+            $next_iter = $route;
+            $next_iter->rewind();
+            $this->iter_current_iterator = $next_iter;
+            return;
+        }
+        $this->iter_current_iterator->next();
+        if (!$this->iter_current_iterator->valid()){
+            $this->iter_current_iterator = array_pop($this->iter_stack);
+        }
     }
 }

@@ -36,4 +36,31 @@ class TestRoute extends PHPUnit_Framework_TestCase{
         $s = '<Route name: myroute, handler: stdClass, contains 2 routes>';
         $this->assertEquals((string) $route, $s);
     }
+
+    function testRouteIteration(){
+        $h = new StdClass;
+        $root = new Route($h, 'root');
+        $r1 = new Route($h, 'r1');
+        $r2 = new Route($h, 'r2');
+        $r3 = new Route($h, 'r3');
+        $r4 = new Route($h, 'r4');
+        $r5 = new Route($h, 'r5');
+        $routemap = $root->add([
+            ['first', $r1->add([
+                ['this-one', $r2->add([
+                    ['second', $r3->add([
+                        ['deepest', $r4]
+                    ])]
+                ])],
+                ['ending', $r1]
+            ])],
+            ['unused', $r5]
+        ]);
+        echo "\nSTART\n";
+        foreach ($routemap as $value){
+            list($path, $route) = $value;
+            echo var_dump($path), $route, "\n";
+            echo "\n";
+        }
+    }
 }
