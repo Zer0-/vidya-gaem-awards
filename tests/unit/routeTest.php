@@ -59,7 +59,6 @@ class TestRoute extends PHPUnit_Framework_TestCase{
         $list = [];
         foreach ($routemap as $value){
             array_push($list, $value);
-            //rint($value[0], $value[1]->name);
         }
         $testlist = [
             [['first'], $r1],
