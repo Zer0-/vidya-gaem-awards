@@ -90,4 +90,35 @@ class TestRouteApi extends PHPUnit_Framework_TestCase{
         $wanted = [];
         $this->assertEquals($api->get_vars(), $wanted);
     }
+
+    function testRouteApiVars(){
+        $path = ['first', '1', 'one', 'two', 'second', '2', 'three', 'four'];
+        $api = new RouteApi($path, $this->routemap);
+        $wanted = [1, 'one', 'two', 2, 'three', 'four'];
+        $this->assertEquals($api->get_vars(), $wanted);
+    }
+
+    function testRouteRoute(){
+        $path = ['first', '1', 'one', 'two', 'second', '2', 'three', 'four'];
+        $api = new RouteApi($path, $this->routemap);
+        $this->assertEquals($api->get_route()->name, 'r4');
+    }
+
+    function testRouteMatching(){
+        $path_route_pairs = [
+            ['/first', $this->r1],
+            ['/first/1000', $this->r2],
+            ['/first/3/', $this->r2],
+            ['/first/3/a/b/c/d/e', $this->r2],
+            ['/first/3/a/b/second', $this->r3],
+            ['/first/3/a/b/second/3', $this->r4],
+            ['/first/3/a/b/second/44/c/d/e', $this->r4],
+        ];
+        foreach ($path_route_pairs as $pair){
+            list($urlpath, $correct_route) = $pair;
+            $path = create_path($urlpath);
+            $api = new RouteApi($path, $this->routemap);
+            $this->assertEquals($api->get_route($path)->name, $correct_route->name);
+        }
+    }
 }

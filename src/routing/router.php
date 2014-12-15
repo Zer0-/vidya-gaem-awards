@@ -52,6 +52,10 @@ function _all_first($array){
     return $values;
 }
 
+function create_path($urlpath){
+    return array_slice(explode('/', $urlpath), 1);
+}
+
 function _match_part($part, array $routemap){
     foreach ($routemap as $tuple){
         list($key, $route) = $tuple;
@@ -123,18 +127,29 @@ class RouteApi{
      * pathparts matched by a route having handles_subtree set.
      */
     function get_vars(){
-        $parts = _all_first($this->routemap->routemap);
+        $routemap = $this->routemap->routemap;
+        $parts = _all_first($routemap);
         $vars = [];
         foreach (array_slice($this->_matched_routes, 1) as $match){
             list($part, $route) = $match;
-            if (in_array($part, $parts))
-                $parts = _all_first($route->routemap);
+            if (in_array($part, $parts)){
+                $routemap = $route->routemap;
+                $parts = _all_first($routemap);
+            }
             else{
                 array_push($vars, $part);
                 if ($route->routemap != $routemap)
-                    $parts = _all_first($route->routemap);
+                    $routemap = $route->routemap;
+                    $parts = _all_first($routemap);
             }
         }
         return $vars;
+    }
+
+    /*
+     * Get the route that handles our path
+     */
+    function get_route(){
+        return end($this->_matched_routes)[1];
     }
 }
