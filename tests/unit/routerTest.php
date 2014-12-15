@@ -19,6 +19,36 @@ function endval($x){
         throw new UnexpectedValueException("Not endvar");
 }
 
+function anystring($s){
+    if (is_string($s))
+        return $s;
+    else
+        throw new UnexpectedValueException("Value must be a string");
+}
+
+function even($x){
+    $x = use_int($x);
+    if ($x % 2 == 0)
+        return $x;
+    else
+        throw new UnexpectedValueException("Expected even number");
+}
+
+function odd($x){
+    $x = use_int($x);
+    if ($x % 2 == 1)
+        return $x;
+    else
+        throw new UnexpectedValueException("Expected odd number");
+}
+
+function four($x){
+    if (strlen($x) == 4)
+        return $x;
+    else
+        throw new UnexpectedValueException("Expected something of length four");
+}
+
 class TestRouteApi extends PHPUnit_Framework_TestCase{
     function setUp(){
         $this->root = new Route(new StdClass, 'root');
@@ -134,5 +164,48 @@ class TestRouteApi extends PHPUnit_Framework_TestCase{
         $api = new RouteApi($path, $this->routemap);
         $wants = [['one', 'two'], ['three', 'four']];
         $this->assertEquals($api->get_relative(), $wants);
+    }
+}
+
+class TestReverseRouting extends PHPUnit_Framework_TestCase{
+    function setUp(){
+        $p_one = new Route(new StdClass, 'of_interest');
+        $r = new Route(new StdClass, 'ignore');
+        $this->routemap = $r->add([
+            ['one', $r],
+            ['const_one', $p_one],
+            ['two', $r->add([
+                ['a', $r->add([
+                    ['use_int', $r],
+                    ['six', $r]
+                ])],
+                ['anystring', $r->add([
+                    ['even', $r->add([
+                        ['wot', $r],
+                        ['const_two', $p_one]
+                    ])],
+                    ['four', $p_one],
+                    ['odd', $p_one]
+                ])]
+            ])]
+        ]);
+        $this->p_one = $p_one;
+    }
+
+    function testRouteLookup(){
+        $test = [
+            ['/const_one', []],
+            ['/two/two/four', ['two', 'four']],
+            ['/two/two/216/const_two', ['two', '216']],
+            ['/two/two/216/const_two', ['two', 216]],
+            ['/two/two/11', ['two', 11]]
+        ];
+        foreach ($test as $t){
+            list($urlpath, $args) = $t;
+            $path = create_path($urlpath);
+            $api = new RouteApi($path, $this->routemap);
+            $found = $api->find($this->p_one->name, $args);
+            $this->assertEquals($urlpath, $found);
+        }
     }
 }

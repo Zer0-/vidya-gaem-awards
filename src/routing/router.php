@@ -56,6 +56,10 @@ function create_path($urlpath){
     return array_slice(explode('/', $urlpath), 1);
 }
 
+function path_to_urlpart($path){
+    return '/' . implode('/', $path);
+}
+
 function _match_part($part, array $routemap){
     foreach ($routemap as $tuple){
         list($key, $route) = $tuple;
@@ -193,5 +197,61 @@ class RouteApi{
         if ($current)
             array_push($relative_paths, $current);
         return $relative_paths;
+    }
+
+    /*
+     * Given a path, potentially full of validation functions, replaces
+     * the functions with items from arg_iter to create an actual path.
+     */
+    private function fill_path($path, $arg_iter){
+        $filled_path = [];
+        foreach ($path as $pathpart){
+            if (!is_callable($pathpart))
+                array_push($filled_path, $pathpart);
+            else{
+                $arg = $arg_iter->current();
+                $arg_iter->next();
+                try{
+                    array_push($filled_path, $pathpart($arg));
+                }
+                catch (UnexpectedValueException $e){
+                    return Null;
+                }
+            }
+        }
+        return $filled_path;
+    }
+
+    /*
+     * Find the path of a route given its name. If the path you are looking
+     * for contains variables, pass them as the 'path_args' parameter.
+     */
+    function find($routename, $path_args=[]){
+        $match = function($path) use ($path_args){
+            $count = 0;
+            foreach ($path as $pathpart){
+                if (is_callable($pathpart))
+                    $count ++;
+            }
+            return $count == count($path_args);
+        };
+        foreach($this->routemap as $r){
+            list($path, $existing_route) = $r;
+            if ($routename == $existing_route->name){
+                $arg_iter = new ArrayIterator($path_args);
+                if ($existing_route->handles_subtree){
+                    $filled_path = $this->fill_path($path, $arg_iter);
+                    if (is_null($fill_path))
+                        continue;
+                    return path_to_urlpart(array_merge($filled_path, iterator_to_array($arg_iter))); 
+                }
+                else if ($match($path)){
+                    $filled_path = $this->fill_path($path, $arg_iter);
+                    if (is_null($filled_path))
+                        continue;
+                    return path_to_urlpart($filled_path); 
+                }
+            }
+        }
     }
 }
