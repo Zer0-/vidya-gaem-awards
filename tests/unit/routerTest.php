@@ -202,10 +202,21 @@ class TestReverseRouting extends PHPUnit_Framework_TestCase{
         ];
         foreach ($test as $t){
             list($urlpath, $args) = $t;
-            $path = create_path($urlpath);
-            $api = new RouteApi($path, $this->routemap);
+            $api = new RouteApi([], $this->routemap);
             $found = $api->find($this->p_one->name, $args);
             $this->assertEquals($urlpath, $found);
+        }
+    }
+
+    function testRouteLookupFailure(){
+        $test = [
+            ['wot'],
+            ['three', 'six']
+        ];
+        foreach ($test as $args){
+            $api = new RouteApi([], $this->routemap);
+            $found = $api->find($this->p_one->name, $args);
+            $this->assertTrue(is_null($found));
         }
     }
 }
