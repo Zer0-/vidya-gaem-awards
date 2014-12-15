@@ -40,6 +40,18 @@ function rint($var=600000, $var2=600000, $var3=600000){
     echo "\n";
 }
 
+/*
+ * Given a multi-dimensional array, return an array of just the first values
+ * of the nested arrays.
+ */
+function _all_first($array){
+    $values = [];
+    foreach ($array as $value){
+        array_push($values, $value[0]);
+    }
+    return $values;
+}
+
 function _match_part($part, array $routemap){
     foreach ($routemap as $tuple){
         list($key, $route) = $tuple;
@@ -98,11 +110,31 @@ class RouteApi{
         $this->_matched_routes = match_path($path, $routemap);
     }
 
+    /*
+     * returns the cleaned path as an array of pathparts
+     */
     function get_path(){
-        $path = [];
-        foreach ($this->_matched_routes as $match){
-            array_push($path, $match[0]);
+        return array_slice(_all_first($this->_matched_routes), 1);
+    }
+
+    /*
+     * Returns an array of pathparts (in original order) that were matched
+     * by a function in the routemap rather than hardcoded. Also returns
+     * pathparts matched by a route having handles_subtree set.
+     */
+    function get_vars(){
+        $parts = _all_first($this->routemap->routemap);
+        $vars = [];
+        foreach (array_slice($this->_matched_routes, 1) as $match){
+            list($part, $route) = $match;
+            if (in_array($part, $parts))
+                $parts = _all_first($route->routemap);
+            else{
+                array_push($vars, $part);
+                if ($route->routemap != $routemap)
+                    $parts = _all_first($route->routemap);
+            }
         }
-        return array_slice($path, 1);
+        return $vars;
     }
 }

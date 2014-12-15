@@ -83,4 +83,11 @@ class TestRouteApi extends PHPUnit_Framework_TestCase{
         $wanted = ['first', 1, 'one', 'two', 'second', 2, 'three', 'four'];
         $this->assertEquals($api->get_path(), $wanted);
     }
+
+    function testRouteApiEmptyVars(){
+        $path = ['first'];
+        $api = new RouteApi($path, $this->routemap);
+        $wanted = [];
+        $this->assertEquals($api->get_vars(), $wanted);
+    }
 }
