@@ -109,16 +109,18 @@ function match_path(array $path, Route $route){
  * See route.php for a description of routemap.
  */
 class RouteApi{
+    private $matched_routes;
+
     function __construct(array $path, Route $routemap){
         $this->routemap = $routemap;
-        $this->_matched_routes = match_path($path, $routemap);
+        $this->matched_routes = match_path($path, $routemap);
     }
 
     /*
      * returns the cleaned path as an array of pathparts
      */
     function get_path(){
-        return array_slice(_all_first($this->_matched_routes), 1);
+        return array_slice(_all_first($this->matched_routes), 1);
     }
 
     /*
@@ -130,7 +132,7 @@ class RouteApi{
         $routemap = $this->routemap->routemap;
         $parts = _all_first($routemap);
         $vars = [];
-        foreach (array_slice($this->_matched_routes, 1) as $match){
+        foreach (array_slice($this->matched_routes, 1) as $match){
             list($part, $route) = $match;
             if (in_array($part, $parts)){
                 $routemap = $route->routemap;
@@ -150,6 +152,46 @@ class RouteApi{
      * Get the route that handles our path
      */
     function get_route(){
-        return end($this->_matched_routes)[1];
+        return end($this->matched_routes)[1];
+    }
+
+    /*
+     * Returns arrays of pathparts that belong to the same Route object
+     * with handles_subtree set.
+     *
+     * For example, given the routemap:
+     *
+     *      $routemap = (new Route($handler, 'root', true)).add([
+     *          ['second', new Route($handler, 'second', true)]
+     *      ]);
+     *
+     * and a url path like ['one', 'two', 'second', '2', 'three']
+     * get_relative would return:
+     *
+     *    [['one', 'two'], ['2', 'three']]
+     *
+     * Note that because 'second' matches the key for the Route called 'second'
+     * a new array of pathparts is started. So it's possible to have multiple
+     * routes with handles_subtree set in the same branch of the routemap tree.
+     */
+    function get_relative(){
+        $routemap = $this->routemap;
+        $relative_paths = [];
+        $current = [];
+        foreach ($this->matched_routes as $m){
+            list($part, $route) = $m;
+            if ($route == $routemap and $route->handles_subtree)
+                array_push($current, $part);
+            else{
+                $routemap = $route;
+                if($current){
+                    array_push($relative_paths, $current);
+                    $current = [];
+                }
+            }
+        }
+        if ($current)
+            array_push($relative_paths, $current);
+        return $relative_paths;
     }
 }
