@@ -93,4 +93,16 @@ function match_path(array $path, Route $route){
  * See route.php for a description of routemap.
  */
 class RouteApi{
+    function __construct(array $path, Route $routemap){
+        $this->routemap = $routemap;
+        $this->_matched_routes = match_path($path, $routemap);
+    }
+
+    function get_path(){
+        $path = [];
+        foreach ($this->_matched_routes as $match){
+            array_push($path, $match[0]);
+        }
+        return array_slice($path, 1);
+    }
 }

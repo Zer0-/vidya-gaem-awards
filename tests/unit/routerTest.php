@@ -76,4 +76,11 @@ class TestRouteApi extends PHPUnit_Framework_TestCase{
         $this->setExpectedException('UnexpectedValueException');
         use_int("123a4");
     }
+
+    function testRouteApiPath(){
+        $path = ['first', '1', 'one', 'two', 'second', '2', 'three', 'four'];
+        $api = new RouteApi($path, $this->routemap);
+        $wanted = ['first', 1, 'one', 'two', 'second', 2, 'three', 'four'];
+        $this->assertEquals($api->get_path(), $wanted);
+    }
 }
