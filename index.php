@@ -1,5 +1,15 @@
 <?php
+require 'vendor/autoload.php';
+require_once("includes/config.php");
 
+use Katzgrau\KLogger\Logger;
+
+$log = new Logger($CONF['logfile']);
+$log->debug("HELLO LOGWORLD");
+
+echo 'wat';
+
+/*
   //ob_start('ob_gzhandler');
   
   require_once("includes/config.php");
