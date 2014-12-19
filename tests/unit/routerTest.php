@@ -107,6 +107,16 @@ class TestRouteApi extends PHPUnit_Framework_TestCase{
         use_int("123a4");
     }
 
+    function testRootOnly(){
+        $rmap = new Route(new StdClass, 'test');
+        $path = create_path('/');
+        $api = new RouteApi($path, $rmap);
+        $matched_path = path_to_urlpart($api->get_path());
+        $this->assertEquals($matched_path, '/');
+        $match = $api->get_route();
+        $this->assertEquals($match->name, 'test');
+    }
+
     function testRouteApiPath(){
         $path = ['first', '1', 'one', 'two', 'second', '2', 'three', 'four'];
         $api = new RouteApi($path, $this->routemap);

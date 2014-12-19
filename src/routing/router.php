@@ -53,6 +53,8 @@ function _all_first($array){
 }
 
 function create_path($urlpath){
+    if ($urlpath == '/')
+        return [];
     return array_slice(explode('/', $urlpath), 1);
 }
 
@@ -106,9 +108,11 @@ function match_path(array $path, Route $route){
  * route name.
  * 
  * The path array that RouteApi takes as the first argument is simply
- * the exploded url path:
+ * the exploded url path (use the create_path function above):
  *
  *      '/my/desired/path' -> ['my', 'desired', 'path']
+ *
+ * An empty array would be the root.
  *
  * See route.php for a description of routemap.
  */
