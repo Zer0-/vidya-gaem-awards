@@ -1,13 +1,47 @@
 <?php
-require 'vendor/autoload.php';
-require_once("includes/config.php");
+require_once 'vendor/autoload.php';
+require_once 'includes/config.php';
+require_once 'src/routing/route.php';
+require_once 'src/http/request.php';
+require_once 'src/http/response.php';
 
 use Katzgrau\KLogger\Logger;
 
-$log = new Logger($CONF['logfile']);
-$log->debug("HELLO LOGWORLD");
+$log = new Logger($CONF['logs']);
+$log->debug('Logs are based');
+$log->debug('_SERVER', $_SERVER);
+$log->debug('_SERVER[REQUEST_URI]: '. $_SERVER['REQUEST_URI']);
 
-echo 'wat';
+class Test{
+    function GET($request, $response){
+        $response->body = "Hello World!";
+    }
+}
+
+$test_handler = new Test;
+$routemap = new Route($test_handler, 'home');
+
+function main($env, $routemap){
+    $request = new Request($env, $routemap);
+    if ($request->route->matched_routes == 404){
+        //make an HTTPNotFound response here rather
+        echo 404;
+        return;
+    }
+    $view = $request->route->get_route()->get_view($request);
+    if ($view == 404){
+        echo 404;
+        return;
+    }
+    $response = new Response;
+    //TODO: wrap executing the view in a try catch
+    $view_result = $view($request, $response);
+    if (!is_null($view_result))
+        $response = $view_result;
+    echo $response->body;
+}
+
+main($_SERVER, $routemap);
 
 /*
   //ob_start('ob_gzhandler');

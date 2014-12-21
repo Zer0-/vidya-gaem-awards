@@ -2,7 +2,7 @@
 
 /*
  * The Route class is responsible for getting the appropriate function
- * to handle the Request object when Route.getView is called.
+ * to handle the Request object when Route.get_view is called.
  * 
  * It is also used in constructing routemaps: nested strucutres that
  * can represent the url layout of the website.
@@ -89,8 +89,17 @@ class Route implements Iterator{
             return '<Route>';
     }
 
+    function get_view($request){
+        if (is_null($this->handler))
+            return 404;
+        if (method_exists($this->handler, $request->get_method()))
+            return function($request, $response){
+                return $this->handler->{$request->get_method()}($request, $response);
+            };
+    }
+
     /*
-     * Iterator methods
+     * Iterator methods. Iteration is recursive.
      */
     function rewind(){
         $this->iter_count = 0;
